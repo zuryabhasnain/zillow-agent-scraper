@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+leads.db
+data/
+.DS_Store
+.venv/

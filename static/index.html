@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zillow Agent Lead Scraper Pro | Autonomous Lead Engine</title>
+  <meta name="description" content="Autonomous real-estate agent scraper for Zillow with anti-bot bypass, rotating proxy engine, live progress streaming, and direct Google Sheets sync.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Zillow <span class="accent-text">LeadPulse</span></span>
+          <span class="brand-badge">PRO CLOUD</span>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Bar -->
+      <div class="header-metrics">
+        <div class="metric-pill">
+          <span class="metric-dot pulse-dot"></span>
+          <span class="metric-label">Engine:</span>
+          <span class="metric-value" id="hdr-engine-status">Active</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Total Leads:</span>
+          <span class="metric-value accent-cyan" id="hdr-total-leads">0</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Verified Emails:</span>
+          <span class="metric-value accent-emerald" id="hdr-total-emails">0</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Phone Numbers:</span>
+          <span class="metric-value accent-indigo" id="hdr-total-phones">0</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-open-sheets-modal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="3" y1="15" x2="21" y2="15"></line>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+            <line x1="15" y1="3" x2="15" y2="21"></line>
+          </svg>
+          Google Sheets Sync
+        </button>
+        <button class="btn btn-primary btn-sm" id="btn-quick-new-job">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          New Scrape Job
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="sub-nav">
+    <div class="nav-container">
+      <button class="nav-tab active" data-tab="tab-launchpad">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        Launchpad
+      </button>
+      <button class="nav-tab" data-tab="tab-monitor">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        Jobs & Live Monitor
+        <span class="tab-badge" id="active-jobs-badge" style="display:none;">0</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-leads">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M9 21V9"></path></svg>
+        Leads Spreadsheet View
+      </button>
+      <button class="nav-tab" data-tab="tab-proxies">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        Anti-Bot & Proxy Engine
+      </button>
+      <button class="nav-tab" data-tab="tab-cloud">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+        Cloud Deployment (24/7)
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Body -->
+  <main class="main-content">
+
+    <!-- TAB 1: LAUNCHPAD -->
+    <section id="tab-launchpad" class="tab-pane active">
+      <div class="hero-banner">
+        <div class="hero-content">
+          <h1>Automated Zillow Real Estate Agent Lead Harvester</h1>
+          <p>Extract verified agent names, phone numbers, direct emails, agencies, reviews, and addresses across all 25 directory pages (up to 375 leads per city) with built-in anti-bot bypass.</p>
+        </div>
+      </div>
+
+      <div class="card launch-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="card-step-badge">STEP 1</span>
+            <h3>Target Location or Zillow URL</h3>
+          </div>
+          <span class="card-subtitle">Enter any US City & State (e.g., "Austin, TX") or paste a Zillow Agent Directory URL</span>
+        </div>
+
+        <form id="form-new-job" class="launch-form">
+          <div class="input-main-group">
+            <div class="input-icon-wrapper">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <input type="text" id="input-location" name="location" placeholder="e.g. Austin, TX or North Chicago, IL or paste Zillow link..." required autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-start-scraping">
+              <span class="btn-spinner" style="display: none;"></span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Start Automated Scrape
+            </button>
+          </div>
+
+          <!-- Quick Location Presets -->
+          <div class="preset-locations">
+            <span class="preset-label">Quick Presets:</span>
+            <button type="button" class="preset-chip" data-loc="Austin, TX">Austin, TX</button>
+            <button type="button" class="preset-chip" data-loc="Miami, FL">Miami, FL</button>
+            <button type="button" class="preset-chip" data-loc="North Chicago, IL">North Chicago, IL</button>
+            <button type="button" class="preset-chip" data-loc="Dallas, TX">Dallas, TX</button>
+            <button type="button" class="preset-chip" data-loc="Los Angeles, CA">Los Angeles, CA</button>
+            <button type="button" class="preset-chip" data-loc="Phoenix, AZ">Phoenix, AZ</button>
+            <button type="button" class="preset-chip" data-loc="Atlanta, GA">Atlanta, GA</button>
+            <button type="button" class="preset-chip" data-loc="Seattle, WA">Seattle, WA</button>
+          </div>
+
+          <!-- Advanced Tuning Toggle -->
+          <details class="tuning-details">
+            <summary class="tuning-summary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              Advanced Scraping & Anti-Bot Tuning (Pages, Delays, Proxy Override)
+            </summary>
+            <div class="tuning-grid">
+              <div class="form-group">
+                <label for="input-total-pages">Total Pages to Scrape (15 agents/page)</label>
+                <div class="input-with-hint">
+                  <input type="number" id="input-total-pages" min="1" max="50" value="25">
+                  <span class="hint-text">= ~375 Agent Leads max</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="select-job-antibot">Anti-Bot Mode Override</label>
+                <select id="select-job-antibot">
+                  <option value="">Use Global Default</option>
+                  <option value="stealth">Stealth Engine (TLS Chrome Impersonation)</option>
+                  <option value="scraperapi">ScraperAPI (Residential Proxy Gateway)</option>
+                  <option value="zenrows">ZenRows (Anti-Bot Bypass Gateway)</option>
+                  <option value="custom_pool">Custom Rotating Proxy Pool</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Stealth Delay Range (Seconds with jitter)</label>
+                <div class="dual-inputs">
+                  <input type="number" id="input-delay-min" step="0.5" min="0.5" max="10" value="1.5" placeholder="Min (1.5s)">
+                  <span>to</span>
+                  <input type="number" id="input-delay-max" step="0.5" min="1" max="15" value="3.5" placeholder="Max (3.5s)">
+                </div>
+              </div>
+            </div>
+          </details>
+        </form>
+      </div>
+
+      <!-- Feature Highlights Grid -->
+      <div class="feature-cards-grid">
+        <div class="feature-card">
+          <div class="feature-icon emerald-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </div>
+          <h4>Zero Block Detection</h4>
+          <p>TLS JA3/JA4 browser fingerprint spoofing and residential proxy rotation bypasses PerimeterX anti-bot barriers completely.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon cyan-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+          </div>
+          <h4>Async Cloud Processing</h4>
+          <p>Jobs run autonomously in the background. Close your laptop or browser tab anytime—the scraper continues uninterrupted.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon purple-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          </div>
+          <h4>Google Sheets 1-Click Sync</h4>
+          <p>Live spreadsheet preview with 1-click clipboard copy (Cmd+V ready) or direct live cloud sync formula <code>=IMPORTDATA()</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: JOBS & LIVE MONITOR -->
+    <section id="tab-monitor" class="tab-pane">
+      <div class="monitor-layout">
+        <!-- Left: Jobs List -->
+        <div class="jobs-sidebar card">
+          <div class="card-header flex-between">
+            <h3>Scrape Jobs History</h3>
+            <button class="btn btn-ghost btn-xs" id="btn-refresh-jobs" title="Refresh Jobs">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+          </div>
+          <div class="jobs-list" id="jobs-list-container">
+            <!-- Dynamically populated -->
+            <div class="empty-state">No scrape jobs yet. Start one in Launchpad!</div>
+          </div>
+        </div>
+
+        <!-- Right: Active Job Detail & Terminal -->
+        <div class="job-active-panel">
+          <!-- Active Job Card -->
+          <div class="card active-job-card" id="active-job-details-card" style="display:none;">
+            <div class="active-job-header">
+              <div class="active-job-info">
+                <span class="status-badge status-running" id="job-status-badge">RUNNING</span>
+                <h2 id="job-target-title">Austin, TX</h2>
+                <a href="#" target="_blank" id="job-zillow-link" class="job-url-link">https://www.zillow.com/...</a>
+              </div>
+              <div class="job-controls">
+                <button class="btn btn-secondary btn-sm" id="btn-job-pause">Pause ⏸</button>
+                <button class="btn btn-secondary btn-sm" id="btn-job-resume" style="display:none;">Resume ▶</button>
+                <button class="btn btn-danger btn-sm" id="btn-job-cancel">Cancel ⏹</button>
+                <a href="#" class="btn btn-primary btn-sm" id="btn-job-download-csv">Export CSV 📥</a>
+                <a href="#" class="btn btn-accent btn-sm" id="btn-job-download-excel">Export Excel 📊</a>
+              </div>
+            </div>
+
+            <!-- Progress Meter -->
+            <div class="progress-section">
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="job-progress-bar" style="width: 0%;"></div>
+              </div>
+              <div class="progress-stats-row">
+                <span id="job-progress-percent">0%</span>
+                <span id="job-progress-page-text">Page 0 of 25</span>
+                <span id="job-progress-count-text">0 / 0 Leads Scraped</span>
+                <span id="job-progress-error-text" class="text-danger">0 Errors</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Terminal Console -->
+          <div class="card terminal-card">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot dot-red"></span>
+                <span class="dot dot-yellow"></span>
+                <span class="dot dot-green"></span>
+              </div>
+              <div class="terminal-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                Real-Time Autonomous Worker Console
+              </div>
+              <div class="terminal-actions">
+                <label class="auto-scroll-toggle">
+                  <input type="checkbox" id="chk-auto-scroll" checked>
+                  Auto-scroll
+                </label>
+                <button class="btn-clean" id="btn-clear-logs" title="Clear View">Clear</button>
+              </div>
+            </div>
+            <div class="terminal-body" id="terminal-logs">
+              <div class="log-line log-info">[SYSTEM] Ready. Select a job to stream real-time logs or launch a new job.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: LEADS SPREADSHEET VIEW ("GOOGLE SHEETS" STYLE) -->
+    <section id="tab-leads" class="tab-pane">
+      <div class="leads-toolbar card">
+        <div class="toolbar-left">
+          <div class="search-input-wrapper">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="leads-search-input" placeholder="Search by name, brokerage, city, phone, email...">
+          </div>
+          <div class="filter-group">
+            <label class="filter-chip">
+              <input type="checkbox" id="filter-has-email">
+              Has Email
+            </label>
+            <label class="filter-chip">
+              <input type="checkbox" id="filter-has-phone">
+              Has Phone
+            </label>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-secondary btn-sm" id="btn-copy-tsv" title="Copy all visible rows formatted for Google Sheets">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            📋 Copy for Google Sheets
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btn-export-all-csv">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-accent btn-sm" id="btn-open-google-sheets-dialog">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+            Google Sheets Live Sync
+          </button>
+        </div>
+      </div>
+
+      <!-- Spreadsheet Table Card -->
+      <div class="card sheet-card">
+        <div class="table-container">
+          <table class="leads-table" id="leads-table">
+            <thead>
+              <tr>
+                <th width="40"><input type="checkbox" id="chk-select-all-leads"></th>
+                <th>Agent Profile</th>
+                <th>Brokerage / Agency</th>
+                <th>Phone Number</th>
+                <th>Email Address</th>
+                <th>Office Address / Location</th>
+                <th>Rating & Reviews</th>
+                <th>Website</th>
+                <th>Zillow URL</th>
+                <th width="80">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="leads-table-body">
+              <tr>
+                <td colspan="10" class="empty-table-cell">No leads found. Launch a scraping job to populate leads!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Pagination Footer -->
+        <div class="table-footer">
+          <div class="table-stats" id="table-stats-text">Showing 0 of 0 leads</div>
+          <div class="table-pagination">
+            <button class="btn btn-ghost btn-sm" id="btn-prev-page" disabled>Previous</button>
+            <span class="page-indicator" id="page-indicator-text">Page 1 of 1</span>
+            <button class="btn btn-ghost btn-sm" id="btn-next-page" disabled>Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: ANTI-BOT & PROXY ENGINE -->
+    <section id="tab-proxies" class="tab-pane">
+      <div class="proxy-page-grid">
+        <!-- Settings Form Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🛡️ Anti-Bot Protection & Proxy Rotation Setup</h3>
+            <span class="card-subtitle">Configure how the scraper avoids PerimeterX, rate limits, and bot detection</span>
+          </div>
+
+          <form id="form-proxy-settings" class="settings-form">
+            <div class="form-group">
+              <label>Select Anti-Bot Engine</label>
+              <div class="radio-cards-grid">
+                <label class="radio-card">
+                  <input type="radio" name="anti_bot_mode" value="stealth" checked>
+                  <div class="radio-card-content">
+                    <div class="radio-card-header">
+                      <strong>Stealth TLS Impersonation</strong>
+                      <span class="pill-free">Zero Config</span>
+                    </div>
+                    <p>Uses <code>curl_cffi</code> Chrome/Safari JA3/JA4 TLS fingerprinting with randomized user-agents & jitter delays. Best for casual scrapes.</p>
+                  </div>
+                </label>
+
+                <label class="radio-card">
+                  <input type="radio" name="anti_bot_mode" value="scraperapi">
+                  <div class="radio-card-content">
+                    <div class="radio-card-header">
+                      <strong>ScraperAPI Gateway</strong>
+                      <span class="pill-recommended">Recommended</span>
+                    </div>
+                    <p>Auto-rotates millions of residential & mobile IPs with automatic CAPTCHA solving. <strong>Includes 5,000 free requests/month</strong>.</p>
+                  </div>
+                </label>
+
+                <label class="radio-card">
+                  <input type="radio" name="anti_bot_mode" value="zenrows">
+                  <div class="radio-card-content">
+                    <div class="radio-card-header">
+                      <strong>ZenRows Gateway</strong>
+                      <span class="pill-badge">Anti-Bot</span>
+                    </div>
+                    <p>High-speed rotating residential proxy gateway with built-in PerimeterX bypass.</p>
+                  </div>
+                </label>
+
+                <label class="radio-card">
+                  <input type="radio" name="anti_bot_mode" value="custom_pool">
+                  <div class="radio-card-content">
+                    <div class="radio-card-header">
+                      <strong>Custom Proxy Pool</strong>
+                      <span class="pill-badge">BYO Proxies</span>
+                    </div>
+                    <p>Paste your own HTTP/HTTPS/SOCKS5 proxy list. Automatically rotates IPs every N requests and on 403 blocks.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Provider API Key Inputs -->
+            <div class="form-group" id="group-scraperapi-key">
+              <label for="input-scraperapi-key">
+                ScraperAPI Key
+                <a href="https://www.scraperapi.com?fp_ref=free" target="_blank" class="link-external">(Get 5,000 Free API Requests Here)</a>
+              </label>
+              <input type="text" id="input-scraperapi-key" placeholder="e.g. 5a1b2c3d4e5f6g7h8i9j...">
+            </div>
+
+            <div class="form-group" id="group-zenrows-key">
+              <label for="input-zenrows-key">
+                ZenRows API Key
+                <a href="https://www.zenrows.com" target="_blank" class="link-external">(Get Free Starter Credits)</a>
+              </label>
+              <input type="text" id="input-zenrows-key" placeholder="e.g. 9f8e7d6c5b4a...">
+            </div>
+
+            <!-- Custom Proxies Input -->
+            <div class="form-group" id="group-custom-proxies">
+              <label for="textarea-custom-proxies">Custom Rotating Proxies (One per line: http://user:pass@host:port or host:port)</label>
+              <textarea id="textarea-custom-proxies" rows="5" placeholder="http://185.199.229.156:7492
+http://user:password@residential-proxy.net:8000
+socks5://proxy.example.com:1080"></textarea>
+              <div class="form-row-inline">
+                <label for="input-rotate-every">Rotate Proxy Every</label>
+                <input type="number" id="input-rotate-every" min="1" max="50" value="3" style="width: 80px;">
+                <span>requests (or immediately upon 403 challenge)</span>
+              </div>
+            </div>
+
+            <!-- Timing and Retries -->
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Stealth Delay Range (Seconds with jitter)</label>
+                <div class="dual-inputs">
+                  <input type="number" id="settings-delay-min" step="0.5" value="1.5">
+                  <span>to</span>
+                  <input type="number" id="settings-delay-max" step="0.5" value="3.5">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="settings-max-retries">Max Retries on Error / Challenge</label>
+                <input type="number" id="settings-max-retries" min="1" max="10" value="3">
+              </div>
+            </div>
+
+            <div class="form-actions-row">
+              <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Proxy Settings</button>
+              <button type="button" class="btn btn-secondary" id="btn-test-proxy">
+                ⚡ Test Connection & Latency
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Connection Test & Status Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Diagnostic & Health Check</h3>
+            <span class="card-subtitle">Real-time IP echo and connection verification</span>
+          </div>
+
+          <div class="diagnostics-panel" id="diag-panel">
+            <div class="diag-status-row">
+              <span class="diag-label">Engine State:</span>
+              <span class="diag-val" id="diag-engine-val">Stealth Direct</span>
+            </div>
+            <div class="diag-status-row">
+              <span class="diag-label">Active Outbound IP:</span>
+              <span class="diag-val accent-cyan" id="diag-ip-val">Click Test Connection</span>
+            </div>
+            <div class="diag-status-row">
+              <span class="diag-label">Network Latency:</span>
+              <span class="diag-val" id="diag-latency-val">--</span>
+            </div>
+            <div class="diag-status-row">
+              <span class="diag-label">PerimeterX Bypass:</span>
+              <span class="diag-val accent-emerald">Supported</span>
+            </div>
+          </div>
+
+          <div class="info-alert" style="margin-top: 20px;">
+            <h4>💡 Why Residential Proxies?</h4>
+            <p>Zillow tracks request velocity closely. If you plan to scrape 10+ cities consecutively (3,750+ agent profile pages), we strongly recommend adding a <strong>ScraperAPI key</strong> or <strong>Residential Proxy Pool</strong> so each request originates from a completely different residential IP.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: CLOUD DEPLOYMENT (24/7 AUTONOMOUS RUNNER) -->
+    <section id="tab-cloud" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h3>☁️ Run 24/7 on the Cloud (Never Keep Your PC On)</h3>
+          <span class="card-subtitle">Deploy this dashboard and scraping worker to the cloud so you can trigger scrapes and close your computer anytime</span>
+        </div>
+
+        <div class="cloud-guides-grid">
+          <!-- Guide 1: 1-Click Render.com -->
+          <div class="cloud-option-card">
+            <div class="cloud-option-header">
+              <div class="cloud-badge">RECOMMENDED (FREE/LOW COST)</div>
+              <h4>Option 1: Deploy to Render.com</h4>
+            </div>
+            <p>Render allows running this full-stack FastAPI app with automatic HTTPS, persistent background execution, and zero maintenance.</p>
+            <ol class="step-list">
+              <li>Push this directory to a GitHub repo (or connect directly).</li>
+              <li>Create a new <strong>Web Service</strong> on <a href="https://render.com" target="_blank">Render.com</a>.</li>
+              <li>Select <strong>Docker</strong> runtime (using the included <code>Dockerfile</code>).</li>
+              <li>Set Health Check Path to <code>/</code>. Click <strong>Deploy</strong>!</li>
+              <li>Your dashboard is now live 24/7 at <code>https://your-app.onrender.com</code>.</li>
+            </ol>
+          </div>
+
+          <!-- Guide 2: Railway.app -->
+          <div class="cloud-option-card">
+            <div class="cloud-option-header">
+              <div class="cloud-badge">EASIEST 1-CLICK</div>
+              <h4>Option 2: Deploy to Railway.app</h4>
+            </div>
+            <p>Railway automatically detects the <code>Dockerfile</code> and deploys with 1 click.</p>
+            <ol class="step-list">
+              <li>Log in to <a href="https://railway.app" target="_blank">Railway.app</a>.</li>
+              <li>Click <strong>New Project</strong> -> <strong>Deploy from GitHub repo</strong>.</li>
+              <li>Railway builds the container and assigns a public URL in 60 seconds.</li>
+              <li>Add a persistent volume for <code>/app/leads.db</code> if you want permanent lead storage across restarts.</li>
+            </ol>
+          </div>
+
+          <!-- Guide 3: DigitalOcean / VPS Docker -->
+          <div class="cloud-option-card">
+            <div class="cloud-option-header">
+              <div class="cloud-badge">SELF-HOSTED VPS</div>
+              <h4>Option 3: Any VPS (Ubuntu / Debian / Docker)</h4>
+            </div>
+            <p>Run locally or on any $5/mo VPS using Docker Compose:</p>
+            <pre class="code-block"><code>git clone &lt;repo&gt;
+cd zillow-agent-scraper
+docker-compose up -d --build</code></pre>
+            <p>Runs persistently in the background. Access anytime via your server IP or domain!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Google Sheets Sync Modal Dialog -->
+  <div class="modal-overlay" id="sheets-modal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Google Sheets Live Cloud Sync</h3>
+        <button class="btn-close" id="btn-close-sheets-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>You can connect your scraped leads to Google Sheets in two effortless ways:</p>
+
+        <div class="sync-method-card">
+          <h4>Method 1: 1-Click Clipboard (Instant)</h4>
+          <p>Click the button below to copy all visible leads formatted specifically for Google Sheets. Then simply open any Google Sheet and press <strong>Cmd+V</strong> (or Ctrl+V)!</p>
+          <button class="btn btn-primary" id="btn-modal-copy-tsv">📋 Copy All Leads for Google Sheets</button>
+        </div>
+
+        <div class="sync-method-card">
+          <h4>Method 2: Live Cloud Formula (Auto-Updating)</h4>
+          <p>Copy this formula and paste it into cell <strong>A1</strong> in Google Sheets. Google Sheets will automatically pull and live-sync all your scraped leads from this cloud server:</p>
+          <div class="code-copy-row">
+            <input type="text" id="sheets-formula-input" readonly value='=IMPORTDATA("http://YOUR-SERVER-URL/api/leads/export/csv")'>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-sheets-formula">Copy Formula</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a href="https://sheets.new" target="_blank" class="btn btn-secondary">Open New Google Sheet ↗</a>
+        <button class="btn btn-primary" id="btn-done-sheets-modal">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Dashboard JavaScript Application -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

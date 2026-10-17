@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: zillow-agent-scraper
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 8000

@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  zillow-scraper:
+    build: .
+    container_name: zillow_agent_scraper
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./leads.db:/app/leads.db
