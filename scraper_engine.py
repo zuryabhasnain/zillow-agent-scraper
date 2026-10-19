@@ -328,6 +328,20 @@ class ZillowScraperEngine:
                     scraped_count += 1
                     update_job_progress(self.job_id, scraped_count=scraped_count)
 
+                    # Push live to Google Sheet Webhook if configured
+                    sheet_webhook = self.settings.get("google_sheet_webhook_url", "").strip()
+                    if sheet_webhook:
+                        try:
+                            import urllib.request
+                            req = urllib.request.Request(
+                                sheet_webhook,
+                                data=json.dumps(lead_record).encode("utf-8"),
+                                headers={"Content-Type": "application/json"}
+                            )
+                            urllib.request.urlopen(req, timeout=5)
+                        except Exception as g_err:
+                            logger.warning(f"Google Sheet sync warning: {g_err}")
+
                     contact_info_summary = f"Phone: {primary_phone or 'N/A'} | Email: {email or 'N/A'}"
                     add_log(self.job_id, "SUCCESS", f"[{scraped_count}/{len(discovered_agents)}] Extracted: {name} ({business_name}) | {contact_info_summary}")
 

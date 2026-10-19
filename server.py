@@ -58,6 +58,7 @@ class SettingsUpdateRequest(BaseModel):
     delay_min: Optional[str] = "1.5"
     delay_max: Optional[str] = "3.5"
     max_retries: Optional[str] = "3"
+    google_sheet_webhook_url: Optional[str] = ""
 
 def _run_scraper_worker(job_id: str):
     """Background worker executed in dedicated daemon thread"""
