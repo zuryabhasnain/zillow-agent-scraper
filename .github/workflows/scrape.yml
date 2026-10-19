@@ -1,0 +1,60 @@
+name: 🏡 Run Autonomous Zillow Scrape
+
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: 'Target City & State (e.g. "Austin, TX" or "Miami, FL" or Zillow URL)'
+        required: true
+        default: 'Austin, TX'
+      pages:
+        description: 'Total Pages to Scrape (1 to 25 pages = up to ~375 leads)'
+        required: true
+        default: '25'
+      sheet_webhook:
+        description: 'Optional: Google Sheets Apps Script Webhook URL for live auto-append'
+        required: false
+        default: ''
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🚀 Execute Autonomous Scraper
+        run: |
+          python cli_scraper.py "${{ github.event.inputs.location }}" --pages ${{ github.event.inputs.pages }} --sheet-webhook "${{ github.event.inputs.sheet_webhook }}"
+
+      - name: 📊 Upload Scraped CSV Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zillow-leads-${{ github.run_id }}
+          path: leads_*.csv
+          retention-days: 30
+
+      - name: 💾 Commit & Push Leads to Repository
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Cloud Scraper"
+          mkdir -p scraped_leads
+          mv leads_*.csv scraped_leads/ 2>/dev/null || true
+          git add scraped_leads/
+          git diff --staged --quiet || git commit -m "Auto-scraped leads for ${{ github.event.inputs.location }} [skip ci]"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
