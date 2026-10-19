@@ -1,3 +1,12 @@
+---
+title: Zillow Agent Lead Scraper Pro
+emoji: 🏡
+colorFrom: indigo
+colorTo: green
+sdk: docker
+app_port: 7860
+---
+
 # 🏡 Zillow Agent Lead Scraper Pro (Autonomous Cloud Harvester)
 
 An automated, anti-bot-resilient web scraper and real-estate leads dashboard built to extract **Agent Names, Agencies/Brokerages, Direct Phone Numbers, Emails, Addresses, Ratings, and Zillow Profile URLs** across all 25 directory pages (up to 375 leads per city) with **zero-block proxy rotation** and **1-click Google Sheets synchronization**.
