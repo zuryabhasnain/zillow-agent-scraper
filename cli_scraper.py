@@ -43,7 +43,7 @@ def run_cli_scrape(location: str, total_pages: int = 25, sheet_webhook: str = ""
     print(f"📞 Verified Phones: {sum(1 for l in leads if l.get('primary_phone'))}")
     print("================================================================\n")
 
-    # Export to CSV
+    # Export to individual city CSV
     csv_filename = f"leads_{location.replace(' ', '_').replace(',', '')}.csv"
     import csv
     with open(csv_filename, "w", newline="", encoding="utf-8-sig") as f:
@@ -72,6 +72,50 @@ def run_cli_scrape(location: str, total_pages: int = 25, sheet_webhook: str = ""
                 l.get("specialties") or ""
             ])
     print(f"📁 Leads saved to: {csv_filename}")
+
+    # Master all_leads.csv (deduplicated by profile_url)
+    os.makedirs("scraped_leads", exist_ok=True)
+    master_csv = "scraped_leads/all_leads.csv"
+    existing_urls = set()
+    if os.path.exists(master_csv):
+        with open(master_csv, "r", encoding="utf-8-sig") as mf:
+            reader = csv.reader(mf)
+            for row in reader:
+                if len(row) > 13:
+                    existing_urls.add(row[13])
+
+    is_new_master = not os.path.exists(master_csv)
+    with open(master_csv, "a", newline="", encoding="utf-8-sig") as mf:
+        writer = csv.writer(mf)
+        if is_new_master:
+            writer.writerow([
+                "Agent Name", "Company / Agency", "Primary Phone", "Cell Phone", "Business Phone",
+                "Email", "Full Address", "City", "State", "Zip Code", "Rating", "Review Count",
+                "Website", "Zillow Profile URL", "Specialties"
+            ])
+        for l in leads:
+            p_url = l.get("profile_url") or ""
+            if p_url and p_url in existing_urls:
+                continue
+            writer.writerow([
+                l.get("name") or "",
+                l.get("business_name") or "",
+                l.get("primary_phone") or "",
+                l.get("phone_cell") or "",
+                l.get("phone_business") or "",
+                l.get("email") or "",
+                l.get("address") or "",
+                l.get("city") or "",
+                l.get("state") or "",
+                l.get("zip_code") or "",
+                l.get("rating") or "",
+                l.get("review_count") or 0,
+                l.get("website_url") or "",
+                p_url,
+                l.get("specialties") or ""
+            ])
+            existing_urls.add(p_url)
+    print(f"📁 Master leads database updated: {master_csv}")
     return csv_filename
 
 if __name__ == "__main__":
