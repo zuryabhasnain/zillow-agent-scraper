@@ -14,7 +14,11 @@ URL_FILE = os.path.join(BASE_DIR, "LIVE_URL.txt")
 def start_api_server():
     print(f"[Server] Starting FastAPI Scraper Server on port {PORT}...", flush=True)
     server_script = os.path.join(BASE_DIR, "server.py")
-    python_bin = sys.executable
+    venv_python = os.path.join(BASE_DIR, "..", ".venv", "bin", "python")
+    if os.path.exists(venv_python):
+        python_bin = os.path.abspath(venv_python)
+    else:
+        python_bin = sys.executable
     subprocess.run([python_bin, server_script])
 
 def keep_alive_worker(url, stop_event):

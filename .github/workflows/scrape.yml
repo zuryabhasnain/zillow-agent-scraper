@@ -40,14 +40,7 @@ jobs:
         run: |
           python cli_scraper.py "${{ github.event.inputs.location }}" --pages ${{ github.event.inputs.pages }} --sheet-webhook "${{ github.event.inputs.sheet_webhook }}"
 
-      - name: 📊 Upload Scraped CSV Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: zillow-leads-${{ github.run_id }}
-          path: leads_*.csv
-          retention-days: 30
-
-      - name: 💾 Commit & Push Leads to Repository
+      - name: 💾 Commit & Push Leads to Permanent Repository Storage
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Cloud Scraper"
