@@ -45,6 +45,20 @@ jobs:
         run: |
           python cli_scraper.py "${{ github.event.inputs.location }}" --pages ${{ github.event.inputs.pages }} --sheet-webhook "${{ github.event.inputs.sheet_webhook }}"
 
+      - name: 🎭 Install Playwright Browsers
+        run: |
+          playwright install chromium --with-deps
+
+      - name: 📊 Push Leads Directly to User's Google Sheet
+        run: |
+          LATEST_CSV=$(ls -t leads_*.csv 2>/dev/null | head -n 1)
+          if [ -n "$LATEST_CSV" ]; then
+            echo "Pushing $LATEST_CSV directly to user's Google Sheet..."
+            python push_to_sheets_playwright.py "$LATEST_CSV" "https://docs.google.com/spreadsheets/d/1Mxz2rJrrxhx6OR3t4wgj_K0M8NsU5ocbc0KwlKgFZtQ/edit?usp=sharing"
+          else
+            echo "No new leads CSV found to push."
+          fi
+
       - name: 💾 Commit & Push Leads to Permanent Repository Storage
         run: |
           git config --local user.email "action@github.com"
