@@ -173,10 +173,68 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  const isGitHubPages = window.location.hostname.endsWith("github.io") || window.location.protocol === "file:";
+  let githubAllLeads = [];
+
+  async function loadLeadsFromCSV() {
+    if (githubAllLeads.length > 0) return githubAllLeads;
+    try {
+      const csvUrl = "./scraped_leads/all_leads.csv";
+      const resp = await fetch(csvUrl);
+      if (!resp.ok) throw new Error("Could not fetch CSV");
+      const csvText = await resp.text();
+      return new Promise((resolve) => {
+        if (typeof Papa === "undefined") {
+          console.warn("PapaParse not loaded");
+          resolve([]);
+          return;
+        }
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            githubAllLeads = results.data.map((row, idx) => ({
+              id: idx + 1,
+              name: row["Agent Name"] || "",
+              business_name: row["Company / Agency"] || "",
+              primary_phone: row["Primary Phone"] || row["Cell Phone"] || row["Business Phone"] || "",
+              phone_cell: row["Cell Phone"] || "",
+              phone_business: row["Business Phone"] || "",
+              email: row["Email"] || "",
+              address: row["Full Address"] || "",
+              city: row["City"] || "",
+              state: row["State"] || "",
+              zip_code: row["Zip Code"] || "",
+              rating: parseFloat(row["Rating"]) || null,
+              review_count: parseInt(row["Review Count"]) || 0,
+              website_url: row["Website"] || "",
+              profile_url: row["Zillow Profile URL"] || "",
+              specialties: row["Specialties"] || "",
+              photo_url: ""
+            }));
+            resolve(githubAllLeads);
+          }
+        });
+      });
+    } catch (err) {
+      console.warn("Failed to load CSV:", err);
+      return [];
+    }
+  }
+
   // -------------------------------------------------------------------------
   // METRICS
   // -------------------------------------------------------------------------
   async function fetchGlobalMetrics() {
+    if (isGitHubPages) {
+      const leads = await loadLeadsFromCSV();
+      elements.hdrTotalLeads.textContent = leads.length.toLocaleString();
+      elements.hdrTotalEmails.textContent = leads.filter(l => l.email).length.toLocaleString();
+      elements.hdrTotalPhones.textContent = leads.filter(l => l.primary_phone).length.toLocaleString();
+      elements.hdrEngineStatus.textContent = "GitHub Cloud (24/7)";
+      return;
+    }
+
     try {
       const res = await fetch("/api/metrics");
       if (!res.ok) return;
@@ -218,6 +276,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const antiBot = elements.selectJobAntibot.value || null;
       const delayMin = parseFloat(elements.inputDelayMin.value) || null;
       const delayMax = parseFloat(elements.inputDelayMax.value) || null;
+
+      if (isGitHubPages) {
+        elements.btnStartScraping.disabled = false;
+        elements.btnStartScraping.querySelector(".btn-spinner").style.display = "none";
+        showToast("🚀 Opening GitHub Cloud Actions Runner...", "info");
+        window.open("https://github.com/zuryabhasnain/zillow-agent-scraper/actions/workflows/scrape.yml", "_blank");
+        return;
+      }
 
       elements.btnStartScraping.disabled = true;
       elements.btnStartScraping.querySelector(".btn-spinner").style.display = "inline-block";
@@ -440,9 +506,34 @@ document.addEventListener("DOMContentLoaded", () => {
   // LEADS SPREADSHEET TABLE
   // -------------------------------------------------------------------------
   async function fetchLeads() {
-    const search = elements.leadsSearchInput.value.trim();
+    const search = elements.leadsSearchInput.value.trim().toLowerCase();
     const hasEmail = elements.filterHasEmail.checked;
     const hasPhone = elements.filterHasPhone.checked;
+
+    if (isGitHubPages) {
+      let all = await loadLeadsFromCSV();
+      if (search) {
+        all = all.filter(l => 
+          (l.name && l.name.toLowerCase().includes(search)) ||
+          (l.business_name && l.business_name.toLowerCase().includes(search)) ||
+          (l.city && l.city.toLowerCase().includes(search)) ||
+          (l.state && l.state.toLowerCase().includes(search)) ||
+          (l.email && l.email.toLowerCase().includes(search)) ||
+          (l.primary_phone && l.primary_phone.toLowerCase().includes(search))
+        );
+      }
+      if (hasEmail) all = all.filter(l => l.email);
+      if (hasPhone) all = all.filter(l => l.primary_phone);
+
+      state.leadsTotal = all.length;
+      state.leadsTotalPages = Math.ceil(all.length / state.leadsLimit) || 1;
+      const start = (state.leadsPage - 1) * state.leadsLimit;
+      state.leads = all.slice(start, start + state.leadsLimit);
+
+      renderLeadsTable();
+      updateTablePagination();
+      return;
+    }
 
     let url = `/api/leads?page=${state.leadsPage}&limit=${state.leadsLimit}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -750,11 +841,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // GOOGLE SHEETS MODAL
   // -------------------------------------------------------------------------
   function setupSheetsModal() {
-    const formula = `=IMPORTDATA("${window.location.protocol}//${window.location.host}/api/leads/export/csv")`;
-    elements.sheetsFormulaInput.value = formula;
+    const getFormula = () => {
+      if (isGitHubPages) {
+        return '=IMPORTDATA("https://raw.githubusercontent.com/zuryabhasnain/zillow-agent-scraper/main/scraped_leads/all_leads.csv")';
+      }
+      return `=IMPORTDATA("${window.location.protocol}//${window.location.host}/api/leads/export/csv")`;
+    };
+
+    elements.sheetsFormulaInput.value = getFormula();
 
     const openModal = () => {
-      elements.sheetsFormulaInput.value = `=IMPORTDATA("${window.location.protocol}//${window.location.host}/api/leads/export/csv")`;
+      elements.sheetsFormulaInput.value = getFormula();
       elements.sheetsModal.style.display = "flex";
     };
 

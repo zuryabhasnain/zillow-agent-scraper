@@ -378,6 +378,14 @@ os.makedirs(os.path.join(STATIC_DIR, "js"), exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+BASE_DIR = os.path.dirname(__file__)
+if os.path.exists(os.path.join(BASE_DIR, "css")):
+    app.mount("/css", StaticFiles(directory=os.path.join(BASE_DIR, "css")), name="css")
+if os.path.exists(os.path.join(BASE_DIR, "js")):
+    app.mount("/js", StaticFiles(directory=os.path.join(BASE_DIR, "js")), name="js")
+if os.path.exists(os.path.join(BASE_DIR, "scraped_leads")):
+    app.mount("/scraped_leads", StaticFiles(directory=os.path.join(BASE_DIR, "scraped_leads")), name="scraped_leads")
+
 @app.get("/")
 @app.head("/")
 def serve_index():
