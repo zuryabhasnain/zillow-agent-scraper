@@ -20,10 +20,15 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    permissions:
+      contents: write
 
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: 🐍 Setup Python 3.11
         uses: actions/setup-python@v5
@@ -48,6 +53,5 @@ jobs:
           mv leads_*.csv scraped_leads/ 2>/dev/null || true
           git add scraped_leads/
           git diff --staged --quiet || git commit -m "Auto-scraped leads for ${{ github.event.inputs.location }} [skip ci]"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
