@@ -1,6 +1,6 @@
 name: Zillow Cloud Harvester
 
-# Runs by itself every hour. Each run starts several workers (12 by default) that take
+# Runs by itself every hour. Each run starts several workers (3 by default) that take
 # cities from the Google Sheet "Queue" tab one by one for about 5.5 hours.
 # Only one run happens at a time, so the next hourly run starts when the previous one ends.
 # Network: uses the PROXY_URL secret if you add one; otherwise Cloudflare WARP (free VPN),
@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        worker: ${{ fromJSON(vars.WORKERS_JSON || '[1,2,3,4,5,6,7,8,9,10,11,12]') }}
+        worker: ${{ fromJSON(vars.WORKERS_JSON || '[1,2,3]') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,6 +54,12 @@ jobs:
           ROTATE_CMD: ${{ steps.warp.outputs.rotate }}
           WORKER_ID: run${{ github.run_number }}-w${{ matrix.worker }}
           MAX_RUNTIME_MIN: ${{ vars.MAX_RUNTIME_MIN || '320' }}
+          # Gentle pacing: Zillow blocks the whole free-VPN range when hit hard.
+          DELAY_MIN: '2.5'
+          DELAY_MAX: '5'
+          MAX_RETRIES: '4'
+          RETRY_SLEEP_MIN: '4'
+          RETRY_SLEEP_MAX: '12'
         run: python cloud/worker.py
 
   # GitHub's hourly schedule is unreliable, so each run starts the next one itself.
