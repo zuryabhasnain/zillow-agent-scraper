@@ -59,7 +59,9 @@ else:
 
 ROTATE_CMD = os.environ.get("ROTATE_CMD", "").strip()   # shell command that gets a new IP (e.g. WARP re-register)
 MAX_ROTATIONS = int(os.environ.get("MAX_ROTATIONS", "300"))
-MAX_RETRIES = int(os.environ.get("MAX_RETRIES", "4"))
+MAX_RETRIES = int(os.environ.get("MAX_RETRIES", "8"))
+RETRY_SLEEP_MIN = float(os.environ.get("RETRY_SLEEP_MIN", "0.5"))   # Zillow blocks at random, so a quick retry
+RETRY_SLEEP_MAX = float(os.environ.get("RETRY_SLEEP_MAX", "2.5"))   # usually gets through - no long back-off
 BLOCK_STREAK_LIMIT = 8      # this many failed fetches in a row = we're blocked
 SAVE_BATCH = 20             # leads per write to the sheet
 START = time.time()
@@ -210,7 +212,7 @@ class Fetcher:
                 self.fail_streak = 0
                 return None, None
             log.warning(f"HTTP {status} on {url} (attempt {attempt}/{MAX_RETRIES})")
-            time.sleep(min(30, 2 ** attempt + random.random() * 2))
+            time.sleep(random.uniform(RETRY_SLEEP_MIN, RETRY_SLEEP_MAX))
 
         self.failures += 1
         self.fail_streak += 1
