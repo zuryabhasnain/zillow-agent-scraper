@@ -58,8 +58,8 @@ else:
     DELAY_MAX = float(os.environ.get("DELAY_MAX") or 4.5)
 
 ROTATE_CMD = os.environ.get("ROTATE_CMD", "").strip()   # shell command that gets a new IP (e.g. WARP re-register)
-MAX_ROTATIONS = int(os.environ.get("MAX_ROTATIONS", "40"))
-MAX_RETRIES = 3
+MAX_ROTATIONS = int(os.environ.get("MAX_ROTATIONS", "300"))
+MAX_RETRIES = int(os.environ.get("MAX_RETRIES", "4"))
 BLOCK_STREAK_LIMIT = 8      # this many failed fetches in a row = we're blocked
 SAVE_BATCH = 20             # leads per write to the sheet
 START = time.time()
@@ -174,9 +174,19 @@ class Fetcher:
         self.fail_streak = 0
         self.requests = 0
         self.failures = 0
+        self.last_404 = False
+
+    def get_hard(self, url, referer=None):
+        """Like get(), but when a page still fails it switches to a new IP and tries once more."""
+        html, data = self.get(url, referer)
+        if data is None and not self.last_404 and rotate_ip():
+            self.fail_streak = max(0, self.fail_streak - 1)
+            html, data = self.get(url, referer)
+        return html, data
 
     def get(self, url, referer=None):
         """Returns (html, next_data) or (None, None) after retries. Raises Blocked on a long failure streak."""
+        self.last_404 = False
         for attempt in range(1, MAX_RETRIES + 1):
             self.requests += 1
             try:
@@ -196,6 +206,7 @@ class Fetcher:
                 # 200 without page data = captcha / challenge page
                 status = "captcha"
             if status == 404:
+                self.last_404 = True
                 self.fail_streak = 0
                 return None, None
             log.warning(f"HTTP {status} on {url} (attempt {attempt}/{MAX_RETRIES})")
@@ -323,7 +334,7 @@ def scrape_city(job, fetcher: Fetcher) -> dict:
         if minutes_used() > MAX_RUNTIME_MIN + 15:
             raise OutOfTime()
         url = base if page == 1 else f"{base}?page={page}"
-        html, data = fetcher.get(url)
+        html, data = fetcher.get_hard(url)
         if data is None:
             stats["failed_pages"] += 1
             if page == 1 and html is None and fetcher.fail_streak == 0:
