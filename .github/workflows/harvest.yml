@@ -1,6 +1,6 @@
 name: Zillow Cloud Harvester
 
-# Runs by itself every hour. Each run starts several workers (3 by default) that take
+# Runs by itself every hour. Each run starts several workers (6 by default) that take
 # cities from the Google Sheet "Queue" tab one by one for about 5.5 hours.
 # Only one run happens at a time, so the next hourly run starts when the previous one ends.
 # Network: uses the PROXY_URL secret if you add one; otherwise Cloudflare WARP (free VPN),
@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        worker: ${{ fromJSON(vars.WORKERS_JSON || '[1,2,3]') }}
+        worker: ${{ fromJSON(vars.WORKERS_JSON || '[1,2,3,4,5,6]') }}
     steps:
       - uses: actions/checkout@v4
 
