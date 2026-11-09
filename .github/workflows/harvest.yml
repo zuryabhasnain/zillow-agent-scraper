@@ -1,0 +1,57 @@
+name: Zillow Cloud Harvester
+
+# Runs by itself every hour. Each run starts several workers (3 by default) that take
+# cities from the Google Sheet "Queue" tab one by one for about 5.5 hours.
+# Only one run happens at a time, so the next hourly run starts when the previous one ends.
+# Network: uses the PROXY_URL secret if you add one; otherwise Cloudflare WARP (free VPN),
+# switching to a new IP whenever Zillow blocks.
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: zillow-harvester
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: ${{ fromJSON(vars.WORKERS_JSON || '[1,2,3]') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install
+        run: pip install "curl_cffi>=0.7" beautifulsoup4 requests
+
+      - name: Start Cloudflare WARP (free rotating VPN)
+        id: warp
+        if: ${{ vars.NETWORK != 'direct' }}
+        env:
+          HAS_PROXY: ${{ secrets.PROXY_URL != '' }}
+        run: |
+          if [ "$HAS_PROXY" = "true" ]; then echo "Using PROXY_URL secret"; exit 0; fi
+          if bash cloud/warp.sh install; then
+            echo "proxy=socks5h://127.0.0.1:40000" >> "$GITHUB_OUTPUT"
+            echo "rotate=bash cloud/warp.sh rotate" >> "$GITHUB_OUTPUT"
+          else
+            echo "WARP unavailable - running direct"
+          fi
+
+      - name: Harvest
+        env:
+          SHEET_URL: ${{ secrets.SHEET_URL }}
+          SHEET_TOKEN: ${{ secrets.SHEET_TOKEN }}
+          PROXY_URL: ${{ secrets.PROXY_URL || steps.warp.outputs.proxy }}
+          ROTATE_CMD: ${{ steps.warp.outputs.rotate }}
+          WORKER_ID: run${{ github.run_number }}-w${{ matrix.worker }}
+          MAX_RUNTIME_MIN: ${{ vars.MAX_RUNTIME_MIN || '320' }}
+        run: python cloud/worker.py
